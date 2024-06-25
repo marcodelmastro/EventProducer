@@ -36,7 +36,6 @@ class makeSampleList():
         elif 'kkmcp8_' in process:
             processhad=process.replace('kkmcp8_','kkmc_')
 
-            
         if  proc_param!='':
             processhad=proc_param.replace('mgp8_','mg_')
             processhad=proc_param.replace('kkmcp8_','kkmc_')
@@ -45,11 +44,23 @@ class makeSampleList():
         print ('lhe yaml    ',yaml_lhe)
         print ('reco yaml    ',yaml_reco)
 
+        if not ut.file_exist(yaml_lhe): 
+            print ('no merged file lhe for process %s continue'%process)
+            #sys.exit(3)
+            return 1.0
+
         nmatched = 0
         nweights = 0
+        nlhe = 0
  
         matchingEff = 1.0
         
+        ylhe=None
+        with open(yaml_lhe, 'r') as stream:
+            try:
+                ylhe = yaml.load(stream, Loader=yaml.FullLoader)
+            except yaml.YAMLError as exc:
+                print(exc)
 
         yreco=None
         with open(yaml_reco, 'r') as stream:
@@ -64,28 +75,15 @@ class makeSampleList():
             nweights+= float(yreco['merge']['sumofweights'])
         except KeyError as e:
             print ('there is a KeyError  :  ',e)
+        for f in ylhe['merge']['outfiles']:
+           
+            if any(f[0].replace('.lhe.gz','') in s[0] for s in yreco['merge']['outfiles']):
+                nlhe+=int(f[1])
+                    
+            if any(f[0].replace('.stdhep.gz','') in s[0] for s in yreco['merge']['outfiles']):
+                nlhe+=int(f[1])
                
                     
-        nlhe = 0
-        if not ut.file_exist(yaml_lhe): 
-            print ('no merged file lhe for process %s continue'%process)
-            #sys.exit(3)
-            nlhe = nmatched
-        else:
-            ylhe=None
-            with open(yaml_lhe, 'r') as stream:
-                try:
-                    ylhe = yaml.load(stream, Loader=yaml.FullLoader)
-                except yaml.YAMLError as exc:
-                    print(exc)
-            for f in ylhe['merge']['outfiles']:
-               
-                if any(f[0].replace('.lhe.gz','') in s[0] for s in yreco['merge']['outfiles']):
-                    nlhe+=int(f[1])
-                        
-                if any(f[0].replace('.stdhep.gz','') in s[0] for s in yreco['merge']['outfiles']):
-                    nlhe+=int(f[1])
-
         # skip process if do not find corresponding lhes
         if nlhe == 0:
             print ('did not find any LHE event for process', process)
@@ -137,7 +135,6 @@ class makeSampleList():
     def makelist(self):
 
         yamldir_reco=self.para.yamldir+self.version+'/'+self.detector+'/'
-        print(yamldir_reco)
 
         nmatched = 0
         nlhe = 0
@@ -161,6 +158,9 @@ class makeSampleList():
         if not ( 'spring2021' in self.version or 'pre_fall2022' in self.version or 'dev' in self.version):  # winter2023 and later 
             prodtag = self.version.replace("_training","")
             extension='/'+prodtag+'/'
+
+        if 'FCChh' in self.para.module_name:
+            extension = ''
 
         for l in ldir:
             processhad=None
@@ -251,19 +251,23 @@ class makeSampleList():
                    f1.writelines(infile)
                    tmpexist=True
         procDict.close()
-        # parse param file
 
-        # strip last comma
-        with open('tmp_{}.json'.format(uid), 'r') as myfile:
-            data=myfile.read()
-            newdata = data[:-2]
+        # strip last comma and check the validity of JSON
+        print('Loading data from: ', 'tmp_{}.json'.format(uid))
+        with open('tmp_{}.json'.format(uid), 'r') as infile:
+            data = infile.read()
+            proc_dict_string = data[:-2] + '}'
 
-        # close header for procDict file(s)
+            try:
+                proc_dict_json = json.loads(proc_dict_string)
+            except json.decoder.JSONDecodeError:
+                print('----> Error: Resulting procDict is not valid JSON!')
+                sys.exit(3)
+
+        # save procDict to file(s)
         for filepath in self.procList:
             with open(filepath, 'w', encoding='utf-8') as outfile:
-                outfile.write(newdata)
-                outfile.write('\n')
-                outfile.write('}\n')
+                json.dump(proc_dict_json, outfile, indent=4)
 
         # replace existing param.py file
         if tmpexist:

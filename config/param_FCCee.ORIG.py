@@ -1,14 +1,14 @@
 #module
 module_name='config/param_FCCee.py'
 #eos tests
-eostest='/lapp_data/fcc-ped/delmastro/testfile.lhe.gz'
+eostest='/eos/experiment/fcc/hh/tests/testfile.lhe.gz'
 eostest_size=1312594
 
 #directories
-webbasedir="/lapp_data/fcc-ped/FCCee/FCCAnalyses_Mar23/"
-pubbasedir="/lapp_data/fcc-ped/FCCee/FCCAnalyses_Mar23/FCCDicts/"
-eosbaseinputdir="/lapp_data/fcc-ped/FCCee/"
-eosbaseoutputdir="/lapp_data/fcc-ped/FCCee/"
+webbasedir="/eos/experiment/fcc/www/data/FCCee/"
+pubbasedir="/afs/cern.ch/work/f/fccsw/public/FCCDicts/"
+eosbaseinputdir="/eos/experiment/fcc/ee/generation/"
+eosbaseoutputdir="/eos/experiment/fcc/ee/generation/"
 
 #stat
 lhe_stat = webbasedir + "statlhe.html"

@@ -1,0 +1,75 @@
+FCC-ee
+
+* Utilisation de samples FCCee copiés localement
+
+** Copie des samples
+
+=mkdir -vp /lapp_data/fcc-ped/FCCee/DelphesEvents/winter2023/IDEA=
+=cd /lapp_data/fcc-ped/FCCee/DelphesEvents/winter2023/IDEA=
+
+Liste des datasets:
+http://fcc-physics-events.web.cern.ch/fcc-physics-events/FCCee/winter2023/Delphesevents_IDEA.php
+
+Par exemple tous les ZH:
+
+=rsync -azv mdelmast@lxplus.cern.ch:/eos/experiment/fcc/ee/generation/DelphesEvents/winter2023/IDEA/wzp6_ee_eeH_H\*_ecm240 .=
+=rsync -azv mdelmast@lxplus.cern.ch:/eos/experiment/fcc/ee/generation/DelphesEvents/winter2023/IDEA/wzp6_mumu_eeH_H\*_ecm240 .=
+=rsync -azv mdelmast@lxplus.cern.ch:/eos/experiment/fcc/ee/generation/DelphesEvents/winter2023/IDEA/wzp6_nunu_eeH_H\*_ecm240 .=
+
+** Création des databases pour pointer les fichiers de config  vers les samples locaux
+
+Cloner EventProducer: =git clone https://github.com/HEP-FCC/EventProducer.git=
+
+=export PYTHONPATH=$PWD/..:$PYTHONPATH=
+
+*** Fichiers yaml par process
+
+Editer =config/param_FCCee.py=:
+
+#+BEGIN_SRC diff
+--- a/config/param_FCCee.py
++++ b/config/param_FCCee.py
+@@ -1,14 +1,18 @@
++# -*- coding: utf-8 -*-
++
+#module
+module_name='config/param_FCCee.py'
+#eos tests
+-eostest='/eos/experiment/fcc/hh/tests/testfile.lhe.gz'
+-eostest_size=1312594
++eostest='/scratch/nicolas/combPdf.dot.svg'
++eostest_size=622695243
+#directories
+-webbasedir="/afs/cern.ch/user/f/fccsw/www/data/FCCee/"
+-pubbasedir="/afs/cern.ch/work/f/fccsw/public/FCCDicts/"
+-eosbaseinputdir="/eos/experiment/fcc/ee/generation/"
+-eosbaseoutputdir="/eos/experiment/fcc/ee/generation/"
++webbasedir="/sps/atlas/morange/FCCee/FCCAnalyses_Mar23/"
++pubbasedir="/sps/atlas/morange/FCCee/FCCAnalyses_Mar23/FCCDicts/"
++eosbaseinputdir="/scratch/nicolas/"
++eosbaseoutputdir="/scratch/nicolas/"
+#+END_SRC
+
+#+BEGIN_SRC bash
+    mkdir -vp mkdir -vp /lapp_data/fcc-ped/FCCee/FCCAnalyses_Mar23/FCCDicts/yaml/FCCee/winter2023/IDEA    
+    python bin/run.py --FCCee --reco --checkeos --prodtag winter2023 --detector IDEA
+    python bin/run.py --FCCee --reco --check --prodtag winter2023 --detector IDEA
+    python bin/run.py --FCCee --reco --merge --prodtag winter2023 --detector IDEA
+#+END_SRC
+
+*** Generarer la database json des nombres d'événements / x-secs etc...
+
+Hacker =common/makeSamplesList.py= car par défaut on a besoin aussi des fichiers LHE pour calculer la matching efficiency --> Utiliser la version de Nicolas Morange
+Forcer les matching efficiencies à 1 ? (en tous cas dans le json originel ça semble être le cas)
+
+Puis
+
+=python bin/run.py --FCCee --reco --sample --prodtag winter2023 --detector IDEA=
+
+** Utilisation des echantillons locaux
+
+à mettre dans le setup.sh de FCCAnalysis, par exemple
+
+export FCCDICTSDIR=/lapp_data/fcc-ped/FCCee/FCCAnalyses_Mar23/FCCDicts
+
+
